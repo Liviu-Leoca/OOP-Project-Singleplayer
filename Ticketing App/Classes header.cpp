@@ -3,89 +3,91 @@
 
 using namespace std;
 
-class location {
+class location{
+	friend class event;
 private:
 	int* maxSeats;
 	int rows;
-	string zone;
+	int vipOrNah;
 	const int CAENCode;
-private:
+public:
 	static string CINEMAname;
 
 	location() :CAENCode(1234)
 	{
 		maxSeats = nullptr;
 		rows = 0;
-		zone = "unknown";
+		vipOrNah = 0;
+
 	}
 
-	location(int* maxSeats, int rows, string zone) :CAENCode(1234)
+	location(int caencode,int* maxSeats, int rows, int vipOrNah) :CAENCode(caencode)
 	{
-		if (maxSeats != nullptr && rows > 0)
+		if (maxSeats != nullptr && vipOrNah > 0)
 		{
-			this->maxSeats = new int[rows];
-			for (int i = 0; i < rows; i++)
+			this->maxSeats = new int[vipOrNah];
+			for (int i = 0; i < vipOrNah; i++)
 			{
 				this->maxSeats[i] = maxSeats[i];
 			}
-			this->rows = rows;
+			this->vipOrNah = vipOrNah;
+
 		}
 		else
 		{
 			this->maxSeats = nullptr;
-			this->rows = 0;
+
 		}
 		this->rows = rows;
-		this->zone = zone;
+		this->vipOrNah = vipOrNah;
 	}
 	~location()
 	{
 		if (this->maxSeats != nullptr)
 			delete[] this->maxSeats;
 	}
-	location(const location& l) :CAENCode(1234)
+	location(const location& l) :CAENCode(l.CAENCode)
 	{
-		if (l.maxSeats != nullptr && l.rows > 0)
+		if (l.maxSeats != nullptr && l.vipOrNah > 0)
 		{
-			this->maxSeats = new int[l.rows];
-			for (int i = 0; i < l.rows; i++)
+			this->maxSeats = new int[l.vipOrNah];
+			for (int i = 0; i < l.vipOrNah; i++)
 			{
 				this->maxSeats[i] = l.maxSeats[i];
 			}
-			this->rows = l.rows;
+			this->vipOrNah = l.vipOrNah;
 		}
 		else
 		{
 			this->maxSeats = nullptr;
-			this->rows = 0;
 		}
 		this->rows = l.rows;
-		this->zone = l.zone;
+		this->vipOrNah = l.vipOrNah;
 	}
 	location& operator=(const location& l)
 	{
 		if (this != &l)
 		{
-			if (l.maxSeats != nullptr && l.rows > 0)
+			if (l.maxSeats != nullptr && l.vipOrNah > 0)
 			{
 				if (maxSeats != nullptr)
 				{
 					delete[] maxSeats;
 				}
-				this->maxSeats = new int[l.rows];
-				for (int i = 0; i < l.rows; i++)
+				this->maxSeats = new int[l.vipOrNah];
+				for (int i = 0; i < l.vipOrNah; i++)
 				{
 					this->maxSeats[i] = l.maxSeats[i];
 				}
-				this->rows = l.rows;
+				this->vipOrNah = l.vipOrNah;
 			}
 			else
 			{
 				this->maxSeats = nullptr;
-				this->rows = 0;
+
 			}
 			this->rows = l.rows;
-			this->zone = l.zone;
+			this->vipOrNah = l.vipOrNah;
 		}
 		return *this;
 	}
@@ -103,17 +105,16 @@ class event
 {
 	friend class ticket;
 private:
-	char* movieName;
+	string movieName;
 	int timeStart;
-
-
+	location maxSeats;
 	int normal, normalPrice;
 	int vip, vipPrice;
 	int d, m, y;
 
 	event()
 	{
-		movieName = nullptr;
+		movieName = "";
 		timeStart = 0;
 		normal = 0;
 		normalPrice = 0;
@@ -123,15 +124,7 @@ private:
 	}
 	event(char* movieName, int timeStart, int normal, int normalPrice, int vip, int vipPrice, int d, int m, int y)
 	{
-		if (movieName != nullptr)
-		{
-			this->movieName = new char[strlen(movieName) + 1];
-			strcpy_s(this->movieName, strlen(movieName) + 1, movieName);
-		}
-		else
-		{
-			this->movieName = nullptr;
-		}
+		this->movieName = movieName;
 		this->timeStart = timeStart;
 		this->normal = normal;
 		this->normalPrice = normalPrice;
@@ -141,22 +134,10 @@ private:
 		this->m = m;
 		this->y = y;
 	}
-	~event()
-	{
-		if (this->movieName != nullptr)
-			delete[] this->movieName;
-	}
+
 	event(const event& e)
 	{
-		if (e.movieName != nullptr)
-		{
-			this->movieName = new char[strlen(e.movieName) + 1];
-			strcpy_s(this->movieName, strlen(e.movieName) + 1, e.movieName);
-		}
-		else
-		{
-			this->movieName = nullptr;
-		}
+		this->movieName = e.movieName;
 		this->timeStart = e.timeStart;
 		this->normal = e.normal;
 		this->normalPrice = e.normalPrice;
@@ -170,19 +151,7 @@ private:
 	{
 		if (this != &e)
 		{
-			if (e.movieName != nullptr)
-			{
-				if (movieName != nullptr)
-				{
-					delete[] movieName;
-				}
-				this->movieName = new char[strlen(e.movieName) + 1];
-				strcpy_s(this->movieName, strlen(e.movieName) + 1, e.movieName);
-			}
-			else
-			{
-				this->movieName = nullptr;
-			}
+			this->movieName = e.movieName;
 			this->timeStart = e.timeStart;
 			this->normal = e.normal;
 			this->normalPrice = e.normalPrice;
@@ -203,42 +172,33 @@ private:
 	event movieName;
 	event timeStart;
 	char* client;
-	int age;
 	bool normalOrVip;
 	int noSeats;
-	int d, m, y;
+	event d, m, y;
 	ticket()
 	{
 		ticketID = 0;
 		client = nullptr;
-		age = 0;
 		normalOrVip = 0;
 		noSeats = 0;
-		d, m, y = 0;
 	}
 	ticket(int ticketID, char* client, int age, bool normalOrVip, int noSeats, int d, int m, int y)
 	{
 		this->ticketID = ticketID;
 		this->client = new char[strlen(client) + 1];
 		strcpy_s(this->client, strlen(client + 1), client);
-		this->age = age;
 		this->normalOrVip = normalOrVip;
 		this->noSeats = noSeats;
-		this->d = d;
-		this->m = m;
-		this->y = y;
+
 	}
 	ticket(const ticket& t)
 	{
 		this->ticketID = t.ticketID;
 		this->client = new char[strlen(t.client) + 1];
 		strcpy_s(this->client, strlen(t.client + 1), t.client);
-		this->age = t.age;
 		this->normalOrVip = t.normalOrVip;
 		this->noSeats = t.noSeats;
-		this->d = t.d;
-		this->m = t.m;
-		this->y = t.y;
+
 	}
 	~ticket()
 	{
@@ -257,13 +217,8 @@ private:
 		this->ticketID = t.ticketID;
 		this->client = new char[strlen(t.client) + 1];
 		strcpy_s(this->client, strlen(t.client + 1), t.client);
-		this->age = t.age;
 		this->normalOrVip = t.normalOrVip;
 		this->noSeats = t.noSeats;
-		this->d = t.d;
-		this->m = t.m;
-		this->y = t.y;
 		return *this;
 	};
-
 };
