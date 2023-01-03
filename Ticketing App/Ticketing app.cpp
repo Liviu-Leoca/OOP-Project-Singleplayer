@@ -2,7 +2,7 @@
 #include "Classes header.cpp";
 using namespace std;
 
-ostream& operator<<(ostream& out, location l)
+ostream& operator<<(ostream& out, EventLocation l)
 {
 	int sum = 0;
 	out << "Maximum number of Seats: ";
@@ -51,10 +51,10 @@ ostream& operator<<(ostream& out, ticket t)
 	return out;
 }
 
-string location::CINEMAname = "Cinema City Onesti";
+string EventLocation::CINEMAname = "Cinema City Onesti";
 int main()
 {
 	std::cout << std::endl << "Hello World!"<<endl;
 	ticket t1;
-	cout << t1.getTicketId() << endl;;
+	cout << t1;
 }

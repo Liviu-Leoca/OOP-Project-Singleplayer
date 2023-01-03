@@ -1,143 +1,78 @@
-#include<iostream>
-#include<string>
 #include<cstdlib>
-
+#include <iostream>
+#include <string>
+#include <unordered_map>
+#include <random>
+#include<fstream>
+#include<map>
+#include<vector>
 using namespace std;
 
-class location {
-	friend class event;
+class EventLocation {
 private:
-	int* maxSeats;
-	int rows;
-	int vipOrNah;
+	int maxSeats = 0;
+	int numRows = 0;
+	int numZones = 0;
 	const int CAENCode;
-public:
+	unordered_map<int, string> seatCoding;  // seat number -> seat code
+	vector<bool> seats;  // true: seat is taken, false: seat is free
 	static string CINEMAname;
+public:
 
-	location() :CAENCode(1234)
+	EventLocation() :CAENCode(0)
 	{
-		maxSeats = nullptr;
-		rows = 0;
-		vipOrNah = 0;
-
+		this->maxSeats = 0;
+		this->numRows = 0;
+		this->numZones = 0;
 	}
-
-	location(int caencode, int* maxSeats, int rows, int vipOrNah) :CAENCode(caencode)
+	EventLocation(int maxSeats, int numRows, int numZones, int caencode = 0) :CAENCode(caencode)
 	{
-		if (maxSeats != nullptr && vipOrNah > 0)
-		{
-			this->maxSeats = new int[vipOrNah];
-			for (int i = 0; i < vipOrNah; i++)
-			{
-				this->maxSeats[i] = maxSeats[i];
-			}
-			this->vipOrNah = vipOrNah;
-
-		}
-		else
-		{
-			this->maxSeats = nullptr;
-
-		}
-		this->rows = rows;
-		this->vipOrNah = vipOrNah;
+		this->maxSeats = maxSeats;
+		this->numRows = numRows;
+		this->numZones = numZones;
+		this->seats.resize(maxSeats, false);  // initialize all seats to be free
 	}
-	~location()
+	EventLocation(const EventLocation& location) :CAENCode(location.CAENCode)
 	{
-		if (this->maxSeats != nullptr)
-			delete[] this->maxSeats;
+		this->maxSeats = location.maxSeats;
+		this->numRows = location.numRows;
+		this->numZones = location.numZones;
+		this->seats.resize(location.maxSeats, false);
 	}
-	location(const location& l) :CAENCode(l.CAENCode)
+	EventLocation& operator=(const EventLocation& location)
 	{
-		if (l.maxSeats != nullptr && l.vipOrNah > 0)
+		if (this != &location)
 		{
-			this->maxSeats = new int[l.vipOrNah];
-			for (int i = 0; i < l.vipOrNah; i++)
-			{
-				this->maxSeats[i] = l.maxSeats[i];
-			}
-			this->vipOrNah = l.vipOrNah;
-		}
-		else
-		{
-			this->maxSeats = nullptr;
-		}
-		this->rows = l.rows;
-		this->vipOrNah = l.vipOrNah;
-	}
-	location& operator=(const location& l)
-	{
-		if (this != &l)
-		{
-			if (l.maxSeats != nullptr && l.vipOrNah > 0)
-			{
-				if (maxSeats != nullptr)
-				{
-					delete[] maxSeats;
-				}
-				this->maxSeats = new int[l.vipOrNah];
-				for (int i = 0; i < l.vipOrNah; i++)
-				{
-					this->maxSeats[i] = l.maxSeats[i];
-				}
-				this->vipOrNah = l.vipOrNah;
-			}
-			else
-			{
-				this->maxSeats = nullptr;
-
-			}
-			this->rows = l.rows;
-			this->vipOrNah = l.vipOrNah;
+			this->maxSeats = location.maxSeats;
+			this->numRows = location.numRows;
+			this->numZones = location.numZones;
+			this->seats.resize(location.maxSeats, false);
 		}
 		return *this;
 	}
-	void setMaxSeats(int* maxSeats)
+	int getMaxSeats()const { return this->maxSeats; }
+	int getNumRows()const { return this->numRows; }
+	int getNumZones() const { return numZones; }
+	unordered_map<int, string> getSeatCoding() { return seatCoding; }
+	static void setName(string name) { EventLocation::CINEMAname = name; }
+	static string getName() { return CINEMAname; }
+
+	// Add a seat coding to the event location
+	void addSeatCoding(int seatNumber, string seatCode)
 	{
-		if (maxSeats != nullptr && vipOrNah > 0)
-		{
-			this->maxSeats = new int[vipOrNah];
-			for (int i = 0; i < vipOrNah; i++)
-			{
-				this->maxSeats[i] = maxSeats[i];
-			}
-			this->vipOrNah = vipOrNah;
-		}
-		else
-		{
-			this->maxSeats = nullptr;
-			this->vipOrNah = 0;
-		}
+		seatCoding[seatNumber] = seatCode;
 	}
-	int* getMaxSeats()
+	// Mark a seat as taken
+	void markSeatTaken(int seatNumber)
 	{
-		return maxSeats;
+		seats[seatNumber - 1] = true;
 	}
-	void setRows(int rows)
+	// Check if a seat is free
+	bool isSeatFree(int seatNumber)
 	{
-		this->rows = rows;
+		return !seats[seatNumber - 1];
 	}
-	int getRows()
-	{
-		return this->rows;
-	}
-	void setVipOrNah(int vipOrNah)
-	{
-		this->vipOrNah = vipOrNah;
-	}
-	int getViprOrNah()
-	{
-		return this->vipOrNah;
-	}
-	static void setName(string name)
-	{
-		location::CINEMAname = name;
-	}
-	static string getName()
-	{
-		return CINEMAname;
-	}
-	friend ostream& operator<<(ostream& out, location l);
+	friend class Ticket;
 };
 
 class event
@@ -146,8 +81,6 @@ class event
 private:
 	string movieName;
 	int timeStart;
-	location maxSeats;
-	location vipOrNah;
 	int normal, normalPrice;
 	int vip, vipPrice;
 	int d, m, y;
@@ -290,7 +223,7 @@ private:
 public:
 	ticket()
 	{
-		ticketID = rand();
+		ticketID = rand() % 10000000;
 		client = nullptr;
 		normalOrVip = 0;
 		noSeats = 0;
@@ -303,17 +236,17 @@ public:
 		this->noSeats = noSeats;
 
 	}
-	ticket(const ticket& t)
-	{
+	//ticket(const ticket& t)
+	//{
 
-		this->client = new char[strlen(t.client) + 1];
-		strcpy_s(this->client, strlen(t.client + 1), t.client);
-		this->normalOrVip = t.normalOrVip;
-		this->noSeats = t.noSeats;
-		this->movieName = t.movieName;
-		this->timeStart = t.timeStart;
+	//	this->client = new char[strlen(t.client) + 1];
+	//	strcpy_s(this->client, strlen(t.client + 1), t.client);
+	//	this->normalOrVip = t.normalOrVip;
+	//	this->noSeats = t.noSeats;
+	//	this->movieName = t.movieName;
+	//	this->timeStart = t.timeStart;
 
-	}
+	//}
 	~ticket()
 	{
 		if (client != nullptr)
