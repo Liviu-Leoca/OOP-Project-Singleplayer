@@ -8,11 +8,13 @@
 #include<vector>
 using namespace std;
 
+enum class Zone { Normal, VIP };
+
 class EventLocation {
 private:
 	int maxSeats = 0;
 	int numRows = 0;
-	int numZones = 0;
+	vector<Zone> seatZones;  // zone of each seat
 	const int CAENCode;
 	unordered_map<int, string> seatCoding;  // seat number -> seat code
 	vector<bool> seats;  // true: seat is taken, false: seat is free
@@ -23,20 +25,21 @@ public:
 	{
 		this->maxSeats = 0;
 		this->numRows = 0;
-		this->numZones = 0;
+		this->seatZones.resize(maxSeats);
+		this->seats.resize(maxSeats, false);
 	}
-	EventLocation(int maxSeats, int numRows, int numZones, int caencode = 0) :CAENCode(caencode)
+	EventLocation(int maxSeats, int numRows, int caencode = 0) :CAENCode(caencode)
 	{
 		this->maxSeats = maxSeats;
 		this->numRows = numRows;
-		this->numZones = numZones;
+		this->seatZones.resize(maxSeats);
 		this->seats.resize(maxSeats, false);  // initialize all seats to be free
 	}
 	EventLocation(const EventLocation& location) :CAENCode(location.CAENCode)
 	{
 		this->maxSeats = location.maxSeats;
 		this->numRows = location.numRows;
-		this->numZones = location.numZones;
+		this->seatZones.resize(location.maxSeats);
 		this->seats.resize(location.maxSeats, false);
 	}
 	EventLocation& operator=(const EventLocation& location)
@@ -45,23 +48,25 @@ public:
 		{
 			this->maxSeats = location.maxSeats;
 			this->numRows = location.numRows;
-			this->numZones = location.numZones;
+			this->seatZones.resize(location.maxSeats);
 			this->seats.resize(location.maxSeats, false);
 		}
 		return *this;
 	}
 	int getMaxSeats()const { return this->maxSeats; }
 	int getNumRows()const { return this->numRows; }
-	int getNumZones() const { return numZones; }
+
 	unordered_map<int, string> getSeatCoding() { return seatCoding; }
 	static void setName(string name) { EventLocation::CINEMAname = name; }
 	static string getName() { return CINEMAname; }
 
 	// Add a seat coding to the event location
-	void addSeatCoding(int seatNumber, string seatCode)
+	void addSeatCoding(int seatNumber, string seatCode, Zone seatZone)
 	{
 		seatCoding[seatNumber] = seatCode;
+		seatZones[seatNumber - 1] = seatZone;
 	}
+
 	// Mark a seat as taken
 	void markSeatTaken(int seatNumber)
 	{
@@ -70,239 +75,147 @@ public:
 	// Check if a seat is free
 	bool isSeatFree(int seatNumber)
 	{
-		return !seats[seatNumber - 1];
+		Zone zone = Zone::Normal;
+		// Check if seat is free in the specified zone
+		if (zone == Zone::Normal)
+		{
+			// Check if seat is free in the normal zone
+			return !seats[seatNumber - 1];
+		}
+		else if (zone == Zone::VIP)
+		{
+			// Check if seat is free in the VIP zone
+			// You can implement this by checking if the seat is in the range of VIP seats
+			// For example, if the VIP zone starts at seat number 1 and has 10 seats,
+			// you can check if the seat number is between 1 and 10 (inclusive)
+			return (seatNumber >= 1 && seatNumber <= 10) && !seats[seatNumber - 1];
+		}
+	}
+
+
+	friend class Ticket;
+};
+
+
+class Event :public EventLocation {
+private:
+	string name;
+	string date;
+	string time;
+
+public:
+	Event()
+	{
+		this->name = "";
+		this->date = "";
+		this->time = "";
+	};
+	Event(string name, string date, string time)
+	{
+		this->name = name;
+		this->date = date;
+		this->time = time;
+	}
+	string getName()
+	{
+		return this->name;
 	}
 	friend class Ticket;
 };
 
-class event
-{
-	friend class ticket;
+class Ticket {
 private:
-	string movieName;
-	int timeStart;
-	int normal, normalPrice;
-	int vip, vipPrice;
-	int d, m, y;
+	int id;
+	string eventName;
+	int seatNumber;
+	string ticketType;
+	static vector<int> issuedIds;  // list of IDs of tickets that have been issued
 
-	event()
-	{
-		movieName = "";
-		timeStart = 0;
-		normal = 0;
-		normalPrice = 0;
-		vip = 0;
-		vipPrice = 0;
-		d, m, y = 0;
-	}
-	event(string movieName, int timeStart, int normal, int normalPrice, int vip, int vipPrice, int d, int m, int y)
-	{
-		this->movieName = movieName;
-		this->timeStart = timeStart;
-		this->normal = normal;
-		this->normalPrice = normalPrice;
-		this->vip = vip;
-		this->vipPrice = vipPrice;
-		this->d = d;
-		this->m = m;
-		this->y = y;
-	}
-	event(const event& e)
-	{
-		this->movieName = e.movieName;
-		this->timeStart = e.timeStart;
-		this->normal = e.normal;
-		this->normalPrice = e.normalPrice;
-		this->vip = e.vip;
-		this->vipPrice = e.vipPrice;
-		this->d = e.d;
-		this->m = e.m;
-		this->y = e.y;
-	}
-	event& operator=(const event& e)
-	{
-		if (this != &e)
-		{
-			this->movieName = e.movieName;
-			this->timeStart = e.timeStart;
-			this->normal = e.normal;
-			this->normalPrice = e.normalPrice;
-			this->vip = e.vip;
-			this->vipPrice = e.vipPrice;
-			this->d = e.d;
-			this->m = e.m;
-			this->y = e.y;
-		}
-		return *this;
-	}
-	void setMovieName(string MovieName)
-	{
-		this->movieName = MovieName;
-	}
-	string getMovieName()
-	{
-		return this->movieName;
-	}
-	void setTimeStart(int timestart)
-	{
-		this->timeStart = timestart;
-	}
-	int getTimeStart()
-	{
-		return this->timeStart;
-	}
-	void setNormalSeats(int normalseats)
-	{
-		this->normal = normalseats;
-	}
-	int setNormalSeats()
-	{
-		return this->normal;
-	}
-	void setNormalSeatsPrice(int normalseatsprice)
-	{
-		this->normalPrice = normalseatsprice;
-	}
-	int setNormalSeatsPrice()
-	{
-		return this->normalPrice;
-	}
-	void setVipSeats(int vipseats)
-	{
-		this->vip = vipseats;
-	}
-	int setVIPSeats()
-	{
-		return this->vip;
-	}
-	void setVipSeatsPrice(int vipseatsprice)
-	{
-		this->vipPrice = vipseatsprice;
-	}
-	int setVipSeatsPrice()
-	{
-		return this->vipPrice;
-	}
-	void setDay(int day)
-	{
-		this->d = day;
-	}
-	int getDay()
-	{
-		return this->d;
-	}
-	void setMonth(int month)
-	{
-		this->m = month;
-	}
-	int getMonth()
-	{
-		return this->m;
-	}
-	void setYear(int year)
-	{
-		this->y = year;
-	}
-	int getYear()
-	{
-		return this->y;
-	}
-	friend ostream& operator<<(ostream& out, event e);
-};
-
-class ticket
-{
-private:
-	int ticketID;
-	event movieName;
-	event timeStart;
-	char* client;
-	bool normalOrVip;
-	int noSeats;
-	event d, m, y;
+	Event event;
+	EventLocation location;
 public:
-	ticket()
+	Ticket()
 	{
-		ticketID = rand() % 10000000;
-		client = nullptr;
-		normalOrVip = 0;
-		noSeats = 0;
+		this->id = 0;
+		this->eventName = event.getName();
+		this->seatNumber = 0;
+		this->ticketType = "";
+		this->event = Event();
+		this->location = EventLocation(0, 0, 0);
 	}
-	ticket(char* client, int age, bool normalOrVip, int noSeats, int d, int m, int y)
+	// Generate a ticket for the given event and ticket characteristics
+	Ticket(string ticketType, int seatNumber, EventLocation location, Event event)
 	{
-		this->client = new char[strlen(client) + 1];
-		strcpy_s(this->client, strlen(client + 1), client);
-		this->normalOrVip = normalOrVip;
-		this->noSeats = noSeats;
-
+		this->id = generateTicketId();
+		this->eventName = event.getName();
+		this->location = location;
+		this->seatNumber = seatNumber;
+		this->ticketType = ticketType;
 	}
-	//ticket(const ticket& t)
-	//{
-
-	//	this->client = new char[strlen(t.client) + 1];
-	//	strcpy_s(this->client, strlen(t.client + 1), t.client);
-	//	this->normalOrVip = t.normalOrVip;
-	//	this->noSeats = t.noSeats;
-	//	this->movieName = t.movieName;
-	//	this->timeStart = t.timeStart;
-
-	//}
-	~ticket()
+	Ticket(const Ticket& t)
 	{
-		if (client != nullptr)
-		{
-			delete[] client;
-		}
+		this->id = generateTicketId();
+		this->eventName = event.getName();
+		this->location = t.location;
+		this->seatNumber = t.seatNumber;
+		this->ticketType = t.ticketType;
 	}
-	ticket& operator=(const ticket& t)
+	Ticket& operator= (const Ticket& t)
 	{
 		if (this != &t)
-			if (client != nullptr)
-			{
-				delete[] client;
-			}
-		//this->ticketID = t.ticketID;
-		this->client = new char[strlen(t.client) + 1];
-		strcpy_s(this->client, strlen(t.client + 1), t.client);
-		this->normalOrVip = t.normalOrVip;
-		this->noSeats = t.noSeats;
+		{
+			this->id = generateTicketId();
+			this->eventName = event.getName();
+			this->location = t.location;
+			this->seatNumber = t.seatNumber;
+			this->ticketType = t.ticketType;
+		}
 		return *this;
-	};
-	void setTicketId()
-	{
-		int ticket = rand();
-		this->ticketID = ticket;
 	}
-	int getTicketId()
-	{
-		return this->ticketID;
+
+	int getTicketID() { return this->id; }
+	int getSeatNumber() { return this->seatNumber; }
+	string getTicketType() { return this->ticketType; }
+	string getEventName() { return this->eventName; }
+
+	// Generate a random ticket ID using a random number generator
+	int generateTicketId() {
+		static mt19937 rng(random_device{}());
+		static uniform_int_distribution<int> dist;
+		return dist(rng);
 	}
-	void setClient(char* client)
-	{
-		this->client = client;
+
+	// Check if the ticket is unique
+	bool isUnique() const {
+		for (int issuedId : issuedIds) {
+			if (issuedId == id) {
+				return false;  // ID already exists in the list, ticket is not unique
+			}
+		}
+		return true;  // ID not found in the list, ticket is unique
 	}
-	char* getClient()
+
+	void writeToBinaryFile(ofstream& out)
 	{
-		return this->client;
+		out.write((char*)&id, sizeof(id));
+		out.write((char*)&eventName, sizeof(eventName));
+		out.write((char*)&seatNumber, sizeof(seatNumber));
+		out.write((char*)&ticketType, sizeof(ticketType));
+		out.close();
 	}
-	void setNormalOrVip(bool normalOrVip)
+	void saveToBinaryFile(const string& filename) {
+		ofstream file(filename, ios::binary);
+		file.write(reinterpret_cast<char*>(this), sizeof(*this));
+		file.close();
+	}
+	void readFromBinaryFile(ifstream& in)
 	{
-		this->normalOrVip = normalOrVip;
+		in.read((char*)&id, sizeof(id));
+		in.read((char*)&eventName, sizeof(eventName));
+		in.read((char*)&seatNumber, sizeof(seatNumber));
+		in.read((char*)&ticketType, sizeof(ticketType));
+		in.close();
 	}
-	bool getNormalOrVip()
-	{
-		if (this->normalOrVip = 0)
-			return "n";
-		else
-			return "v";
-	}
-	void setNoSeats(int noSeats)
-	{
-		this->noSeats = noSeats;
-	}
-	int getNoSeats()
-	{
-		return this->noSeats;
-	}
-	friend ostream& operator<<(ostream& out, ticket t);
+	friend ostream& operator<<(ostream&, Ticket);
+	friend istream& operator>>(istream&, Ticket&);
 };
