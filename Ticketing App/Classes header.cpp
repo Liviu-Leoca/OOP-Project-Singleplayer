@@ -203,6 +203,7 @@ public:
 		out.write((char*)&ticketType, sizeof(ticketType));
 		out.close();
 	}
+
 	void saveToBinaryFile(const string& filename) {
 		ofstream file(filename, ios::binary);
 		file.write(reinterpret_cast<char*>(this), sizeof(*this));
@@ -216,6 +217,22 @@ public:
 		in.read((char*)&ticketType, sizeof(ticketType));
 		in.close();
 	}
-	friend ostream& operator<<(ostream&, Ticket);
-	friend istream& operator>>(istream&, Ticket&);
+	//friend ostream& operator<<(ostream&, Ticket);
+	//friend istream& operator>>(istream&, Ticket&);
+
+	friend ostream& operator<<(ostream& out, const Ticket& ticket) {
+		out.write((char*)&ticket.id, sizeof(ticket.id));
+		out.write((char*)&ticket.eventName, sizeof(ticket.eventName));
+		out.write((char*)&ticket.seatNumber, sizeof(ticket.seatNumber));
+		out.write((char*)&ticket.ticketType, sizeof(ticket.ticketType));
+		return out;
+	}
+
+	friend std::istream& operator>>(std::istream& in, Ticket& ticket) {
+		in.read(reinterpret_cast<char*>(&ticket.id), sizeof(ticket.id));
+		in.read(reinterpret_cast<char*>(&ticket.eventName), sizeof(ticket.eventName));
+		in.read(reinterpret_cast<char*>(&ticket.seatNumber), sizeof(ticket.seatNumber));
+		in.read(reinterpret_cast<char*>(&ticket.ticketType), sizeof(ticket.ticketType));
+		return in;
+	}
 };
