@@ -144,7 +144,7 @@ public:
 		this->location = EventLocation(0, 0, 0);
 	}
 	// Generate a ticket for the given event and ticket characteristics
-	Ticket(string ticketType, int seatNumber, EventLocation location, Event event)
+	Ticket(string ticketType, int seatNumber)
 	{
 		this->id = generateTicketId();
 		this->eventName = event.getName();

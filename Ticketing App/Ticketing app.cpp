@@ -147,38 +147,30 @@ int main() {
                     break;
                 }
             }
+
             // Issue ticket
-            Ticket ticket(ticketType,seatNumber,location,event);
+            Ticket ticket(ticketType, seatNumber);
 
             // Save the ticket to the binary file
             ticket.saveToBinaryFile("tickets.bin");
-           /* ofstream out("tickets.bin", ios::binary);
-            out << ticket;
-            out.close();*/
-            ifstream file("tickets.bin", ios::binary);
-            file >> ticket;
-            file.close();
 
-           // cout << "Ticket issued and saved to binary file." << endl;
+            cout << endl << ticket << endl;
+
+            cout << "Ticket issued and saved to binary file." << endl;
             break;
         }
         case ShowTicket: {
             // Load ticket data from binary file
             Ticket ticket;
-        /*    ifstream in("tickets.bin", ios::binary);
-            in >> ticket;
-            in.close();*/
-            ifstream inputFile("tickets.bin", ios::binary );
-            if (inputFile.is_open()) {
-                ticket.readFromBinaryFile(inputFile);
-            }
+            ifstream inputFile("tickets.bin", ios::binary);
+            ticket.readFromBinaryFile(inputFile);
 
             // Display the ticket details
-            /*cout << "ID: " << ticket.getTicketID() << endl;
+            cout << "ID: " << ticket.getTicketID() << endl;
             cout << "Event name: " << ticket.getEventName() << endl;
             cout << "Seat number: " << ticket.getSeatNumber() << endl;
-            cout << "Ticket type: " << ticket.getTicketType() << endl;*/
-            //inputFile.close();
+            cout << "Ticket type: " << ticket.getTicketType() << endl;
+            inputFile.close();
             break;
         }
                        //case DisplaySeats: {
