@@ -2,66 +2,90 @@
 #include "Classes header.cpp";
 using namespace std;
 
-//ostream& operator<<(ostream& out, EventLocation l)
-//{
-//	int sum = 0;
-//	out << "Maximum number of Seats: ";
-//	for (int i = 0; i < l.vipOrNah; ++i)
-//		sum += l.maxSeats[i];
-//	out << sum << endl;
-//	out << "Number of Normal Seats: ";
-//	out << l.maxSeats[0]; out << endl;
-//	out << "Number of VIP Seats: ";
-//	out << l.maxSeats[1]; out << endl;
-//	return out;
-//}
-//
-//ostream& operator<<(ostream& out, event e)
-//{
-//	out << "Movie Name: ";
-//	out << e.movieName; out << endl;
-//	out << "Starts at: ";
-//	out << e.timeStart; out << endl;
-//	out << "Number of Normal Seats: ";
-//	out << e.normal; out << endl;
-//	out << "Price of Normal Seats: ";
-//	out << e.normalPrice; out << endl;
-//	out << "Number of VIP Seats: ";
-//	out << e.vip; out << endl;
-//	out << "Price of VIP Seats: ";
-//	out << e.vipPrice; out << endl;
-//	return out;
-//}
-//
-//ostream& operator<<(ostream& out, ticket t)
-//{
-//	out << "Ticket ID: ";
-//	out << t.ticketID; out << endl;
-//	//out << "Movie Name: ";
-//	//out << t.movieName; out << endl;
-//	//out << "Starts at: ";
-//	//out << t.timeStart; out << endl;
-//	out << "Clients: ";
-//	for (int i = 0; i < t.noSeats; ++i)
-//		 out<<" "<< t.client[i]<<endl;
-//	out << "Number Seats: ";
-//	out << t.noSeats; out << endl;
-//	out << "Type: ";
-//	out << t.getNormalOrVip(); out << endl;
-//	return out;
-//}
+ostream& operator<<(ostream& out, EventLocation l)
+{
+    for (int i = 0; i < l.rows; i++) {
+        cout << "Row " << i + 1 << ": ";
+        for (int j = 0; j < l.columns; j++) {
+            cout << (l.seats[i][j] ? 'X' : 'O') << " ";
+        }
+        cout << endl;
+    }
+    out << endl << "Total seats:" << l.getSeatCount() << endl;
+
+    return out;
+}
+istream& operator>>(istream& in, EventLocation& location)
+{
+    cout << "Enter number of rows: ";
+    in >> location.rows;
+    cout << "Enter number of columns: ";
+    in >> location.columns;
+    return in;
+}
+
+ostream& operator<<(ostream& out, Event e)
+{
+    out << "Movie Name: " << e.name << endl;
+    out << "Date: " << e.date << endl;
+    out << "Time: " << e.time << endl;
+    return out;
+}
+istream& operator>>(istream& in, Event& e)
+{
+    cout << "Enter event name: ";
+    in >> e.name;
+    cout << "Enter event date (yyyy-mm-dd): ";
+    in >> e.date;
+    cout << "Enter event time (hh:mm): ";
+    in >> e.time;
+    return in;
+}
 
 vector<int> Ticket::issuedIds;
-string EventLocation::CINEMAname = "Cinema City Onesti";
+
+ostream& operator<<(ostream& out, Ticket t)
+{
+    out << "Movie Ticket " << endl;
+    out << "Movie: " << t.getEventName() << endl;
+    out << "ID: " << t.getTicketID() << endl;
+    out << "Number of Seats: " << t.numberOfSeats << endl;
+    out << "Seats: ";
+    for (int i = 0; i < t.numberOfSeats; i++) {
+        out << t.seatNumber[i] << " ";
+    }
+    out << endl;
+    out << "Ticket type: " << t.getTicketType() << endl;
+    return out;
+}
+istream& operator>>(istream& in, Ticket& t)
+{
+    cout << "Enter the number of seats: ";
+    in >> t.numberOfSeats;
+    t.seatNumber = new int[t.numberOfSeats];
+    cout << "Enter seat numbers: ";
+    for (int i = 0; i < t.numberOfSeats; i++)
+    {
+        in >> t.seatNumber[i];
+    }
+    cout << "Enter ticket type(n or v): ";
+    in >> t.ticketType;
+    Zone zone;
+    if (t.ticketType == "n") { zone = Zone::Normal; }
+    else if (t.ticketType == "v") { zone = Zone::VIP; }
+    else {
+        if (t.ticketType != "n" || t.ticketType != "v") {
+            cout << "Invalid zone." << endl;
+        }
+    }
+    return in;
+}
+
 
 int main() {
     vector<Ticket> tickets;
-    // Create an event location
-    EventLocation location;
-    // Create an event
     Event event;
-
-    // Menu options
+    EventLocation location;
     enum Option {
         EnterLocation = 1,
         EnterEvent,
@@ -71,7 +95,6 @@ int main() {
     };
 
     while (true) {
-        // Display menu
         cout << "Menu:" << endl;
         cout << "  1. Enter event location characteristics" << endl;
         cout << "  2. Enter event characteristics" << endl;
@@ -85,106 +108,46 @@ int main() {
 
         switch (choice) {
         case EnterLocation: {
-            // Enter event location characteristics
-            int  maxSeats, numRows;
-            cout << "Enter maximum number of seats: ";
-            cin >> maxSeats;
-            cout << "Enter number of rows: ";
-            cin >> numRows;
-
-            location = EventLocation(maxSeats, numRows);
-            cout << "Event location characteristics entered." << endl;
+            cin >> location;
+            cout << location;
             cout << endl;
             break;
         }
         case EnterEvent: {
-            // Enter event characteristics
-            string name, date, time;
-            cout << "Enter event name: ";
-            cin >> name;
-            cout << "Enter event date (yyyy-mm-dd): ";
-            cin >> date;
-            cout << "Enter event time (hh:mm): ";
-            cin >> time;
-
-            event = Event(name, date, time);
-            cout << "Event characteristics entered." << endl;
+            cin >> event;
+            cout << event << endl;
             cout << endl;
             break;
         }
         case GenerateTicket: {
-            // Issue a ticket
-            // Check if event and event location are set
-            if (event.getName() == "" || location.getMaxSeats() == 0) {
-                cout << "Event or event location not set." << endl;
-                break;
-            }
-
-            // Read seat number
-            int seatNumber;
-            cout << "Enter seat number: ";
-            cin >> seatNumber;
-
-
-            // Check if seat is available
-            if (!location.isSeatFree(seatNumber))
-            {
-                cout << "Seat is not available." << endl;
-                break;
-            }
-
-            // Read ticket type
-            string ticketType;
-            cout << "Enter ticket type(n or v): ";
-            cin >> ticketType;
-
-            Zone zone;
-            if (ticketType == "n") { zone = Zone::Normal; }
-            else if (ticketType == "v") { zone = Zone::VIP; }
-            else {
-                if (ticketType != "n" || ticketType != "v") {
-                    cout << "Invalid zone." << endl;
-                    break;
-                }
-            }
-
-            // Issue ticket
-            Ticket ticket(ticketType, seatNumber);
-
-            // Save the ticket to the binary file
+            //if (event.getName() != "" && location.getRows() != 0 && location.getColumns() != 0) {
+            cout << endl;
+            cout << location << endl;
+            Ticket ticket;
+            cin >> ticket;
+            cout << ticket;
+            ticket.reserveSeats(); // reserve the seats associated with the ticket
             ticket.saveToBinaryFile("tickets.bin");
-
+            cout << endl << location << endl;
             cout << endl << ticket << endl;
 
             cout << "Ticket issued and saved to binary file." << endl;
+
             break;
         }
         case ShowTicket: {
-            // Load ticket data from binary file
             Ticket ticket;
             ifstream inputFile("tickets.bin", ios::binary);
             ticket.readFromBinaryFile(inputFile);
 
             // Display the ticket details
             cout << "ID: " << ticket.getTicketID() << endl;
-            cout << "Event name: " << ticket.getEventName() << endl;
+            //cout << "Event name: " << ticket.getEventName() << endl;
             cout << "Seat number: " << ticket.getSeatNumber() << endl;
             cout << "Ticket type: " << ticket.getTicketType() << endl;
             inputFile.close();
             break;
         }
-                       //case DisplaySeats: {
-                       //    // Display a matrix of seats
-                       //    cout << "Seats: " << endl;
-                       //    for (int i = 1; i <= location.getMaxSeats(); i++) {
-                       //        cout << location.isSeatFree(i);
-                       //        if (i % 10 == 0) {
-                       //            cout << endl;
-                       //        }
-                       //    }
-                       //    cout << endl;
-                       //    break;
-                       //}
         case Quit: {
             return 0;
         }
