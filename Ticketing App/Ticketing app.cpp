@@ -1,4 +1,3 @@
-#include<iostream>
 #include "Classes header.cpp";
 using namespace std;
 
@@ -116,29 +115,28 @@ int main() {
         case EnterEvent: {
             cin >> event;
             cout << event << endl;
-            cout << endl;
             break;
         }
         case GenerateTicket: {
-            //if (event.getName() != "" && location.getRows() != 0 && location.getColumns() != 0) {
-            cout << endl;
-            cout << location << endl;
-            Ticket ticket;
-            cin >> ticket;
-            cout << ticket;
-            ticket.reserveSeats(); // reserve the seats associated with the ticket
-            ticket.saveToBinaryFile("tickets.bin");
-            cout << endl << location << endl;
-            cout << endl << ticket << endl;
+            if (event.getName() != "" && location.getRows() != 0 && location.getColumns() != 0) {
+                cout << endl;
+                cout << location << endl;
+                Ticket ticket;
+                cin >> ticket;
+                cout << ticket;
+                ticket.reserveSeats(location); // reserve the seats associated with the ticket
+                ticket.saveToBinaryFile("tickets.bin");
+                cout << endl << location << endl;
+                cout << endl << ticket << endl;
+               // ticket.readFromBinaryFile("ticekts.bin");
+                cout << "Ticket issued and saved to binary file." << endl;
 
-            cout << "Ticket issued and saved to binary file." << endl;
-
-            break;
-        }
+                break;
+            }
         case ShowTicket: {
             Ticket ticket;
             ifstream inputFile("tickets.bin", ios::binary);
-            ticket.readFromBinaryFile(inputFile);
+            //ticket.readFromBinaryFile(inputFile);
 
             // Display the ticket details
             cout << "ID: " << ticket.getTicketID() << endl;
@@ -156,6 +154,7 @@ int main() {
             break;
         }
 
+        }
         }
     }
 }

@@ -19,19 +19,33 @@ private:
 	int rows = 0;
 	int columns = 0;
 	int seatCount = 0;
-	bool** seats;
+	bool** seats=nullptr;
 
 public:
 	EventLocation() {
 		this->rows = 0;
 		this->columns = 0;
-		this->seatCount = 0;
-		this->seats = nullptr;
+        if (rows != 0 && columns != 0)
+            this->seatCount = rows * columns;
+        else
+            this->seatCount = 0;
+        this->seats = new bool* [rows];
+        for (int i = 0; i < rows; i++) {
+            this->seats[i] = new bool[columns];
+        }
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < columns; j++) {
+                this->seats[i][j] = false;
+            }
+        }
 	}
 	EventLocation(int rows, int columns) {
 		this->rows = rows;
 		this->columns = columns;
-		this->seatCount = this->rows * this->columns;
+        if (rows != 0 && columns != 0)
+            this->seatCount = rows * columns;
+        else
+            this->seatCount = 0;
 		this->seats = new bool* [rows];
 		for (int i = 0; i < rows; i++) {
 			this->seats[i] = new bool[columns];
@@ -45,7 +59,10 @@ public:
 	EventLocation(const EventLocation& location) {
 		this->rows = location.rows;
 		this->columns = location.columns;
-		this->seatCount = location.rows * location.columns;
+        if (location.rows != 0 && location.columns != 0)
+            this->seatCount = location.rows * location.columns;
+        else
+            this->seatCount = 0;
 		this->seats = new bool* [location.rows];
 		for (int i = 0; i < location.rows; i++) {
 			this->seats[i] = new bool[location.columns];
@@ -60,7 +77,10 @@ public:
 		if (this != &location) {
 			this->rows = location.rows;
 			this->columns = location.columns;
-			this->seatCount = location.rows * location.columns;
+            if (location.rows != 0 && location.columns != 0)
+                this->seatCount = location.rows * location.columns;
+            else
+                this->seatCount = 0;
 			this->seats = new bool* [location.rows];
 			for (int i = 0; i < location.rows; i++) {
 				this->seats[i] = new bool[location.columns];
@@ -90,10 +110,12 @@ public:
 			}
 		}
 	}
-	void markSeatTaken(int row, int col) {
-
-		seats[row][col] = true;
-	}
+    bool isSeatTaken(int seatNumber)
+    {
+        int col = seatNumber % columns;
+        int row = seatNumber / columns;
+        return seats[row][col];
+    }
 	friend class Ticket;
 	friend ostream& operator<<(ostream&, EventLocation);
 	friend istream& operator>>(istream&, EventLocation& location);
@@ -105,7 +127,7 @@ private:
 	string name;
 	string date;
 	string time;
-
+   // const string ReleaseDate;
 public:
 	Event()
 	{
@@ -139,6 +161,7 @@ private:
     int* seatNumber;
     string ticketType;
     static vector<int> issuedIds;
+    static const int MAX_SEATS_PER_RESERVATION = 10;
 
     Event event;
     EventLocation location;
@@ -195,6 +218,13 @@ public:
     string getTicketType() { return this->ticketType; }
     string getEventName() { return this->eventName; }
 
+    int reserveSeats(int numberOfSeats) {
+        if (numberOfSeats > MAX_SEATS_PER_RESERVATION) {
+            cout << "Cannot reserve more than " << MAX_SEATS_PER_RESERVATION << " seats at once." << endl;
+            return -1;
+        }
+        else return 0;
+    }
     int generateTicketId() {
         static mt19937 rng(random_device{}());
         static uniform_int_distribution<int> dist;
@@ -213,7 +243,6 @@ public:
     void writeToBinaryFile(ofstream& out)
     {
         out.write((char*)&id, sizeof(id));
-        // out.write((char*)&eventName, sizeof(eventName));
         int seatNumberSize = sizeof(seatNumber);
         out.write((char*)&seatNumberSize, sizeof(seatNumberSize));
         for (int i = 0; i < seatNumberSize; i++) {
@@ -222,6 +251,7 @@ public:
         out.write((char*)&ticketType, sizeof(ticketType));
         out.close();
     }
+
     void saveToBinaryFile(const string& filename) {
         ofstream file(filename, ios::binary);
         int seatNumberSize = sizeof(seatNumber);
@@ -233,29 +263,49 @@ public:
         file.write((char*)&ticketType, sizeof(ticketType));
         file.close();
     }
-    void readFromBinaryFile(ifstream& in)
+
+    void readFromBinaryFile(const string& filename)
     {
-        in.read((char*)&id, sizeof(id));
-        int seatNumberSize;
-        in.read((char*)&seatNumberSize, sizeof(seatNumberSize));
-        seatNumber = new int[seatNumberSize];
-        for (int i = 0; i < seatNumberSize; i++) {
-            in.read((char*)&seatNumber[i], sizeof(seatNumber[i]));
+        ifstream file(filename, ios::binary);
+        if (file.fail())
+        {
+            cerr << "Error: Could not open file '" << filename << "' for reading." << endl;
+            return;
         }
-        in.read((char*)&ticketType, sizeof(ticketType));
-        in.close();
+        file.read((char*)&id, sizeof(id));
+        int seatNumberSize;
+        file.read((char*)&seatNumberSize, sizeof(seatNumberSize));
+        vector<int>seatNumber;
+        for (int i = 0; i < seatNumberSize; i++) {
+            file.read((char*)&seatNumber[i], sizeof(seatNumber[i]));
+        }
+        file.read((char*)&ticketType, sizeof(ticketType));
+        file.close();
     }
-    void reserveSeats() {
+    void reserveSeats(const EventLocation& location) {
         cout << "Reserving seat(s): ";
+        if (location.seatCount == 0) {
+            cout << "Invalid location" << endl;
+            return;
+        }
         for (int i = 0; i < this->numberOfSeats; i++) {
             int col = this->seatNumber[i] % location.columns;
             int row = this->seatNumber[i] / location.columns;
-
-            //cout << "(" << row + 1 << ", " << (char)('A' + col) << ") ";
-            location.seats[row][col] = true;
+            /*if (row >= location.rows || col >= location.columns) {
+                cout << "Invalid seat" << endl;
+            }*/
+            if (location.seats[row][col] != false) 
+            {
+                cout << "Seat has been taken.";
+            }
+            else {
+                location.seats[row][col] = true;
+            }
+            
         }
         cout << endl;
     }
+
     friend ostream& operator<<(ostream&, Ticket);
     friend istream& operator>>(istream&, Ticket&);
 };
