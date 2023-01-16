@@ -1,9 +1,7 @@
 #include <iostream>
 #include <string>
-#include <unordered_map>
 #include <random>
 #include<fstream>
-#include<map>
 #include<vector>
 using namespace std;
 
@@ -11,152 +9,167 @@ enum class Zone { Normal, VIP };
 
 class Seats
 {
-	virtual int generateTicketId() = 0;
+    virtual int generateTicketId() = 0;
 };
 
 class EventLocation {
 private:
-	int rows = 0;
-	int columns = 0;
-	int seatCount = 0;
-	bool** seats=nullptr;
+    int rows;
+    int columns;
+    bool** seats;
 
 public:
-	EventLocation() {
-		this->rows = 0;
-		this->columns = 0;
-        if (rows != 0 && columns != 0)
-            this->seatCount = rows * columns;
-        else
-            this->seatCount = 0;
+    EventLocation() {
+        this->rows = 0;
+        this->columns = 0;
+        this->seats = nullptr;
+    }
+    bool** allocate(size_t m, size_t n)
+    {
+        bool** seats = nullptr;
+
+        if (n != 0 && m != 0)
+        {
+            seats = new bool* [m];
+
+            for (size_t i = 0; i < m; i++) seats[i] = new bool[n];
+        }
+
+        return seats;
+    }
+    EventLocation(int rows, int columns) :rows(rows), columns(columns), seats(allocate(rows, columns)) {
+        this->rows = rows;
+        this->columns = columns;
+        this->seats = new bool* [rows];
         this->seats = new bool* [rows];
         for (int i = 0; i < rows; i++) {
             this->seats[i] = new bool[columns];
         }
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < columns; j++) {
-                this->seats[i][j] = false;
+                this->seats[i][j] = seats[i][j];
             }
         }
-	}
-	EventLocation(int rows, int columns) {
-		this->rows = rows;
-		this->columns = columns;
-        if (rows != 0 && columns != 0)
-            this->seatCount = rows * columns;
-        else
-            this->seatCount = 0;
-		this->seats = new bool* [rows];
-		for (int i = 0; i < rows; i++) {
-			this->seats[i] = new bool[columns];
-		}
-		for (int i = 0; i < rows; i++) {
-			for (int j = 0; j < columns; j++) {
-				this->seats[i][j] = false;
-			}
-		}
-	}
-	EventLocation(const EventLocation& location) {
-		this->rows = location.rows;
-		this->columns = location.columns;
-        if (location.rows != 0 && location.columns != 0)
-            this->seatCount = location.rows * location.columns;
-        else
-            this->seatCount = 0;
-		this->seats = new bool* [location.rows];
-		for (int i = 0; i < location.rows; i++) {
-			this->seats[i] = new bool[location.columns];
-		}
-		for (int i = 0; i < location.rows; i++) {
-			for (int j = 0; j < location.columns; j++) {
-				this->seats[i][j] = false;
-			}
-		}
-	}
-	EventLocation& operator=(const EventLocation& location) {
-		if (this != &location) {
-			this->rows = location.rows;
-			this->columns = location.columns;
-            if (location.rows != 0 && location.columns != 0)
-                this->seatCount = location.rows * location.columns;
-            else
-                this->seatCount = 0;
-			this->seats = new bool* [location.rows];
-			for (int i = 0; i < location.rows; i++) {
-				this->seats[i] = new bool[location.columns];
-			}
-			for (int i = 0; i < location.rows; i++) {
-				for (int j = 0; j < location.columns; j++) {
-					this->seats[i][j] = false;
-				}
-			}
-		}
-		return *this;
-	}
-	~EventLocation() {
-		if (this->seats != nullptr)
-		{
-			delete[] seats;
-		}
-	}
-	int getRows()const { return rows; }
-	int getColumns()const { return columns; }
-	int getSeatCount()const { return seatCount; }
-	void displaySeats() {
-		for (int i = 0; i < seatCount; i++) {
-			cout << (seats[i] ? 'X' : '.');
-			if ((i + 1) % columns == 0) {
-				cout << endl;
-			}
-		}
-	}
+    }
+    EventLocation(const EventLocation& location) :rows(location.rows), columns(location.columns), seats(allocate(location.rows, location.columns)) {
+        this->rows = location.rows;
+        this->columns = location.columns;
+        if (location.seats != nullptr)
+        {
+            this->seats = new bool* [location.rows];
+            for (int i = 0; i < location.rows; i++) {
+                this->seats[i] = new bool[location.columns];
+                for (int j = 0; j < location.columns; j++) {
+                    this->seats[i][j] = location.seats[i][j];
+                }
+            }
+        }
+    }
+    EventLocation& operator=(const EventLocation& location) {
+        if (this != &location) {
+            for (int i = 0; i < this->rows; i++) {
+                delete[] seats[i];
+            }
+            delete[] seats;
+            this->rows = location.rows;
+            this->columns = location.columns;
+            this->seats = new bool* [location.rows];
+            for (int i = 0; i < location.rows; i++) {
+                this->seats[i] = new bool[location.columns];
+                for (int j = 0; j < location.columns; j++) {
+                    this->seats[i][j] = location.seats[i][j];
+                }
+            }
+        }
+        return *this;
+    }
+    ~EventLocation() {
+        for (int i = 0; i < this->rows; i++) {
+            delete[] seats[i];
+        }
+        delete[] seats;
+    }
+    int getRows()const { return rows; }
+    int getColumns()const { return columns; }
+    static int calculateTotalSeats(int rows, int columns) {
+        return rows * columns;
+    }
     bool isSeatTaken(int seatNumber)
     {
         int col = seatNumber % columns;
         int row = seatNumber / columns;
         return seats[row][col];
     }
-	friend class Ticket;
-	friend ostream& operator<<(ostream&, EventLocation);
-	friend istream& operator>>(istream&, EventLocation& location);
+    friend class Ticket;
+    friend ostream& operator<<(ostream&, EventLocation);
+    friend istream& operator>>(istream&, EventLocation& location);
 };
 
 
 class Event :public EventLocation {
 private:
-	string name;
-	string date;
-	string time;
-   // const string ReleaseDate;
+    char* name;
+    string date;
+    string time;
+    const int ReleaseDate;
 public:
-	Event()
-	{
-		this->name = "";
-		this->date = "";
-		this->time = "";
-	};
-	Event(string name, string date, string time)
-	{
-		this->name = name;
-		this->date = date;
-		this->time = time;
-	}
-	Event(const Event& e)
-	{
-		this->name = e.name;
-		this->date = e.date;
-		this->time = e.time;
-	}
-	string getName() { return name; }
-	friend class Ticket;
-	friend ostream& operator<<(ostream&, Event);
-	friend istream& operator>>(istream&, Event&);
+    Event() :ReleaseDate(2023)
+    {
+        this->name = nullptr;
+        this->date = "";
+        this->time = "";
+    }
+    Event(const char* name, string date, string time) :ReleaseDate(2023)
+    {
+        this->name = new char[strlen(name) + 1];
+        strcpy_s(this->name, strlen(name) + 1, name);
+        this->date = date;
+        this->time = time;
+    }
+    Event(const Event& e) :ReleaseDate(e.ReleaseDate)
+    {
+        this->name = new char[strlen(e.name) + 1];
+        strcpy_s(this->name, strlen(e.name) + 1, e.name);
+        this->date = e.date;
+        this->time = e.time;
+    }
+    ~Event()
+    {
+        delete[] name;
+    }
+    Event& operator=(const Event& e)
+    {
+        if (this != &e)
+        {
+            if (e.name != nullptr)
+            {
+                if (name != nullptr)
+                {
+                    delete[] name;
+                }
+
+                this->name = new char[strlen(e.name) + 1];
+                strcpy_s(this->name, strlen(e.name) + 1, e.name);
+            }
+            this->date = e.date;
+            this->time = e.time;
+        }
+        return *this;
+    }
+    char* getName() {
+        return name;
+    }
+    string getDate() { return date; }
+    string getTime() { return time; }
+    friend class Ticket;
+    friend ostream& operator<<(ostream&, Event);
+    friend istream& operator>>(istream&, Event&);
 };
 
 class Ticket : public Seats {
 private:
     int id;
-    string eventName;
+    char* eventName;
     int numberOfSeats;
     int* seatNumber;
     string ticketType;
@@ -216,7 +229,7 @@ public:
     int getNumberOfSeats() { return this->numberOfSeats; }
     int* getSeatNumber() { return this->seatNumber; }
     string getTicketType() { return this->ticketType; }
-    string getEventName() { return this->eventName; }
+    char* getEventName() { return eventName; }
 
     int reserveSeats(int numberOfSeats) {
         if (numberOfSeats > MAX_SEATS_PER_RESERVATION) {
@@ -231,27 +244,15 @@ public:
         return dist(rng);
     }
 
-    // Check if the ticket is unique
+
     bool isUnique() const {
         for (int issuedId : issuedIds) {
             if (issuedId == id) {
-                return false;  // ID already exists in the list, ticket is not unique
+                return false;
             }
         }
         return true;
     }
-    void writeToBinaryFile(ofstream& out)
-    {
-        out.write((char*)&id, sizeof(id));
-        int seatNumberSize = sizeof(seatNumber);
-        out.write((char*)&seatNumberSize, sizeof(seatNumberSize));
-        for (int i = 0; i < seatNumberSize; i++) {
-            out.write((char*)&seatNumber[i], sizeof(seatNumber[i]));
-        }
-        out.write((char*)&ticketType, sizeof(ticketType));
-        out.close();
-    }
-
     void saveToBinaryFile(const string& filename) {
         ofstream file(filename, ios::binary);
         int seatNumberSize = sizeof(seatNumber);
@@ -260,18 +261,15 @@ public:
         for (int i = 0; i < seatNumberSize; i++) {
             file.write((char*)&seatNumber[i], sizeof(seatNumber[i]));
         }
-        file.write((char*)&ticketType, sizeof(ticketType));
+        short dim = this->ticketType.length();
+        file.write((char*)&dim, sizeof(dim));
+        file.write(ticketType.c_str(), dim + 1);
         file.close();
     }
 
     void readFromBinaryFile(const string& filename)
     {
         ifstream file(filename, ios::binary);
-        if (file.fail())
-        {
-            cerr << "Error: Could not open file '" << filename << "' for reading." << endl;
-            return;
-        }
         file.read((char*)&id, sizeof(id));
         int seatNumberSize;
         file.read((char*)&seatNumberSize, sizeof(seatNumberSize));
@@ -279,29 +277,27 @@ public:
         for (int i = 0; i < seatNumberSize; i++) {
             file.read((char*)&seatNumber[i], sizeof(seatNumber[i]));
         }
-        file.read((char*)&ticketType, sizeof(ticketType));
+        short dim = 0;
+        file.read((char*)&dim, sizeof(dim));
+        char* n = new char[dim + 1];
+        file.read(n, dim + 1);
+        ticketType = n;
+        delete[] n;
         file.close();
     }
     void reserveSeats(const EventLocation& location) {
-        cout << "Reserving seat(s): ";
-        if (location.seatCount == 0) {
-            cout << "Invalid location" << endl;
-            return;
-        }
+
         for (int i = 0; i < this->numberOfSeats; i++) {
             int col = this->seatNumber[i] % location.columns;
             int row = this->seatNumber[i] / location.columns;
-            /*if (row >= location.rows || col >= location.columns) {
-                cout << "Invalid seat" << endl;
-            }*/
-            if (location.seats[row][col] != false) 
+            if (location.seats[row][col] != true)
             {
                 cout << "Seat has been taken.";
             }
             else {
-                location.seats[row][col] = true;
+                location.seats[row][col] = false;
             }
-            
+
         }
         cout << endl;
     }

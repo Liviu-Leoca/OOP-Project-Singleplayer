@@ -4,16 +4,18 @@ using namespace std;
 ostream& operator<<(ostream& out, EventLocation l)
 {
     for (int i = 0; i < l.rows; i++) {
-        cout << "Row " << i + 1 << ": ";
+        out << "Row " << i + 1 << ": ";
         for (int j = 0; j < l.columns; j++) {
-            cout << (l.seats[i][j] ? 'X' : 'O') << " ";
+            out << (l.seats[i][j] ? 'X' : 'O') << " ";
         }
-        cout << endl;
+        out << endl;
     }
-    out << endl << "Total seats:" << l.getSeatCount() << endl;
+    int totalSeats = l.calculateTotalSeats(l.rows, l.columns);
+    out << "Total seats: " << totalSeats << endl;
 
     return out;
 }
+
 istream& operator>>(istream& in, EventLocation& location)
 {
     cout << "Enter number of rows: ";
@@ -33,7 +35,11 @@ ostream& operator<<(ostream& out, Event e)
 istream& operator>>(istream& in, Event& e)
 {
     cout << "Enter event name: ";
-    in >> e.name;
+    char buffer[256];
+    in >> buffer;
+    e.name = new char[strlen(buffer) + 1];
+    strcpy_s(e.name, strlen(buffer) + 1, buffer);;
+
     cout << "Enter event date (yyyy-mm-dd): ";
     in >> e.date;
     cout << "Enter event time (hh:mm): ";
@@ -46,7 +52,7 @@ vector<int> Ticket::issuedIds;
 ostream& operator<<(ostream& out, Ticket t)
 {
     out << "Movie Ticket " << endl;
-    out << "Movie: " << t.getEventName() << endl;
+    //out << "Movie: " << t.eventName << endl;
     out << "ID: " << t.getTicketID() << endl;
     out << "Number of Seats: " << t.numberOfSeats << endl;
     out << "Seats: ";
@@ -61,20 +67,29 @@ istream& operator>>(istream& in, Ticket& t)
 {
     cout << "Enter the number of seats: ";
     in >> t.numberOfSeats;
-    t.seatNumber = new int[t.numberOfSeats];
-    cout << "Enter seat numbers: ";
-    for (int i = 0; i < t.numberOfSeats; i++)
-    {
-        in >> t.seatNumber[i];
+    int cannot = t.reserveSeats(t.numberOfSeats);
+    if (int cannot = 1) {
+        cout << "Enter the number of seats: ";
+        in >> t.numberOfSeats;
     }
-    cout << "Enter ticket type(n or v): ";
-    in >> t.ticketType;
-    Zone zone;
-    if (t.ticketType == "n") { zone = Zone::Normal; }
-    else if (t.ticketType == "v") { zone = Zone::VIP; }
     else {
-        if (t.ticketType != "n" || t.ticketType != "v") {
-            cout << "Invalid zone." << endl;
+
+
+        t.seatNumber = new int[t.numberOfSeats];
+        cout << "Enter seat numbers: ";
+        for (int i = 0; i < t.numberOfSeats; i++)
+        {
+            in >> t.seatNumber[i];
+        }
+        cout << "Enter ticket type(n or v): ";
+        in >> t.ticketType;
+        Zone zone;
+        if (t.ticketType == "n") { zone = Zone::Normal; }
+        else if (t.ticketType == "v") { zone = Zone::VIP; }
+        else {
+            if (t.ticketType != "n" || t.ticketType != "v") {
+                cout << "Invalid zone." << endl;
+            }
         }
     }
     return in;
@@ -116,34 +131,37 @@ int main() {
             cin >> event;
             cout << event << endl;
             break;
+
         }
         case GenerateTicket: {
-            if (event.getName() != "" && location.getRows() != 0 && location.getColumns() != 0) {
+            if (event.getName() != nullptr && location.getRows() != 0 && location.getColumns() != 0) {
                 cout << endl;
                 cout << location << endl;
                 Ticket ticket;
                 cin >> ticket;
                 cout << ticket;
-                ticket.reserveSeats(location); // reserve the seats associated with the ticket
+                //ticket.reserveSeats(location);
                 ticket.saveToBinaryFile("tickets.bin");
-                cout << endl << location << endl;
-                cout << endl << ticket << endl;
-               // ticket.readFromBinaryFile("ticekts.bin");
-                cout << "Ticket issued and saved to binary file." << endl;
-
+                ticket.readFromBinaryFile("ticekts.bin");
                 break;
             }
         case ShowTicket: {
-            Ticket ticket;
-            ifstream inputFile("tickets.bin", ios::binary);
-            //ticket.readFromBinaryFile(inputFile);
-
-            // Display the ticket details
-            cout << "ID: " << ticket.getTicketID() << endl;
-            //cout << "Event name: " << ticket.getEventName() << endl;
-            cout << "Seat number: " << ticket.getSeatNumber() << endl;
-            cout << "Ticket type: " << ticket.getTicketType() << endl;
-            inputFile.close();
+            try {
+                Ticket ticket;
+                ifstream inputFile("tickets.bin", ios::binary);
+                ticket.readFromBinaryFile("tickets.bin");
+                if (inputFile.is_open())
+                {
+                    // Display the ticket details
+                    cout << "ID: " << ticket.getTicketID() << endl;
+                    cout << "Seat number: " << ticket.getSeatNumber() << endl;
+                    cout << "Ticket type: " << ticket.getTicketType() << endl;
+                    inputFile.close();
+                }
+            }
+            catch (const exception& e) {
+                cout << "An error occured: " << e.what() << endl;
+            }
             break;
         }
         case Quit: {
